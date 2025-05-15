@@ -1,21 +1,19 @@
 import time
-import openmeteo_requests
+import requests
 
 from multiprocessing import Pool
-from openmeteo_requests import Client
-from openmeteo_sdk.WeatherApiResponse import WeatherApiResponse
 
 from WeatherAPI.config import URL, PARAMS, COUNT
 
 
-def get_response(meteo: Client, url: str, params: dict) -> WeatherApiResponse:
-	responses = meteo.weather_api(url, params=params)
-	return responses[0]
+def get_response(url: str, params: dict) -> dict:
+	responses = requests.get(url, params=params, timeout=10)
+	if responses.status_code != 200:
+		raise Exception(f"Error: {responses.status_code}")
+	return responses.json()
 
 
-def get_weather_with_multiprocessing() -> list[WeatherApiResponse]:
-	open_meteo: Client = openmeteo_requests.Client()
-
+def get_weather_with_multiprocessing() -> list[dict]:
 	time_start = time.time()
 	with Pool(processes=4) as p:
 		responses = p.starmap(get_response, [(open_meteo, URL, PARAMS) for _ in range(COUNT)])
